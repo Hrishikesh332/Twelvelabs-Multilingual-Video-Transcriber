@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multilingual Transcript App</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body class="bg-gradient-to-r from-blue-100 to-purple-100 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <h1 class="text-4xl font-bold mb-8 text-center text-blue-600">Multilingual Transcript App</h1>
+        
+        <div class="bg-white shadow-lg rounded-lg p-6 mb-8 transition-all duration-300 hover:shadow-xl">
+            <form id="upload-form" class="space-y-4">
+                <div>
+                    <label for="language-select" class="block text-sm font-medium text-gray-700">Select Language</label>
+                    <select id="language-select" name="language" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md">
+                        <option value="English">English</option>
+                        <option value="German">German</option>
+                        <option value="French">French</option>
+                        <option value="Spanish">Spanish</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="file-input" class="block text-sm font-medium text-gray-700">Choose Video File</label>
+                    <input type="file" id="file-input" name="file" accept=".mp4,.avi,.mov" class="mt-1 block w-full text-sm text-gray-500
+                        file:mr-4 file:py-2 file:px-4
+                        file:rounded-full file:border-0
+                        file:text-sm file:font-semibold
+                        file:bg-blue-50 file:text-blue-700
+                        hover:file:bg-blue-100
+                        transition-all duration-300
+                    ">
+                </div>
+                <button type="submit" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-300">
+                    Upload and Process
+                </button>
+            </form>
+        </div>
+
+        <div id="status" class="text-center text-lg font-semibold mb-4"></div>
+
+        <div id="result" class="hidden">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div class="bg-white shadow-lg rounded-lg p-4 transition-all duration-300 hover:shadow-xl">
+                    <h2 class="text-2xl font-semibold mb-4 text-blue-600">Video</h2>
+                    <div id="video-container" class="aspect-w-16 aspect-h-9 mb-4"></div>
+                </div>
+                <div class="bg-white shadow-lg rounded-lg p-4 transition-all duration-300 hover:shadow-xl">
+                    <h2 class="text-2xl font-semibold mb-4 text-blue-600">Transcript</h2>
+                    <div id="transcript" class="h-96 overflow-y-auto custom-scrollbar"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>

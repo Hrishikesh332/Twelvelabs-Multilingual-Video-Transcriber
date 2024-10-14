@@ -1,0 +1,42 @@
+.custom-scrollbar::-webkit-scrollbar {
+    width: 8px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+.timestamp {
+    @apply cursor-pointer text-blue-600 hover:text-blue-800 transition-colors duration-300;
+}
+
+.transcript-entry {
+    @apply mb-2 p-2 rounded hover:bg-blue-50 transition-colors duration-300;
+}
+
+.transcript-entry:nth-child(even) {
+    @apply bg-gray-50;
+}
+
+#status {
+    @apply transition-all duration-300 transform;
+}
+
+#status.loading {
+    @apply text-blue-600 animate-pulse;
+}
+
+#status.success {
+    @apply text-green-600;
+}
+
+#status.error {
+    @apply text-red-600;
+}
