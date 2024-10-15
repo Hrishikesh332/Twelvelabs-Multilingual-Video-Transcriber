@@ -1,15 +1,16 @@
-from flask import Flask, render_template, request, jsonify, send_from_directory
+from flask import Flask, render_template, request, jsonify, send_from_directory, session
 from werkzeug.utils import secure_filename
 import os
+import uuid
 from twelvelabs import TwelveLabs
 from twelvelabs.models.task import Task
 from dotenv import load_dotenv
 
 load_dotenv()
-
 API_KEY = os.getenv("API_KEY")
 
 app = Flask(__name__)
+app.secret_key = os.urandom(24)  
 
 UPLOAD_FOLDER = 'uploads'
 ALLOWED_EXTENSIONS = {'mp4', 'avi', 'mov'}
@@ -17,6 +18,9 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024
 
 client = TwelveLabs(api_key=API_KEY)
+headers = {
+    "x-api-key": API_KEY
+}
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -30,22 +34,28 @@ def on_task_update(task: Task):
 
 def process_video(filepath, language):
     try:
-        engines = [
-            {
-                "name": "pegasus1.1",
-                "options": ["visual", "conversation"]
-            },
-            {
-                "name": "marengo2.6",
-                "options": ["visual", "conversation", "text_in_video", "logo"]
-            }
-        ]
-        index = client.index.create(
-            name="Live121111917",
-            engines=engines
-        )
-        
-        task = client.task.create(index_id=index.id, file=filepath)
+        if 'index_id' not in session:
+            index_name = f"Translate{uuid.uuid4().hex[:8]}"
+            engines = [
+                {
+                    "name": "pegasus1.1",
+                    "options": ["visual", "conversation"]
+                },
+                {
+                    "name": "marengo2.6",
+                    "options": ["visual", "conversation", "text_in_video", "logo"]
+                }
+            ]
+            index = client.index.create(
+                name=index_name,
+                engines=engines
+            )
+            session['index_id'] = index.id
+            print(f"Created new index with ID: {index.id}")
+        else:
+            print(f"Using existing index with ID: {session['index_id']}")
+
+        task = client.task.create(index_id=session['index_id'], file=filepath)
         
         task.wait_for_done(sleep_interval=5, callback=on_task_update)
         if task.status != "ready":
@@ -54,7 +64,6 @@ def process_video(filepath, language):
         
         prompt = f"Provide the Transcript in the Translated {language.capitalize()} Language with the timestamp of the Indexed Video Content."
         res = client.generate.text(video_id=task.video_id, prompt=prompt, temperature=0.25)
-
         print("Raw API Response:")
         print(res.data)
         
