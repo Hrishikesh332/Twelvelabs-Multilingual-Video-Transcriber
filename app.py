@@ -3,6 +3,7 @@ from werkzeug.utils import secure_filename
 import os
 from twelvelabs import TwelveLabs
 from twelvelabs.models.task import Task
+from dotenv import load_dotenv
 
 load_dotenv()
 
