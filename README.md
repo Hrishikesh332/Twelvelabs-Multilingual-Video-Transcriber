@@ -40,7 +40,7 @@ Also, providing the time stamp interaction with the video, for the proper tracki
 
 Try out the application now:
 
-[![MultiLingual Video Transcriber](https://img.shields.io/badge/Transcriber-Launch_the_App-4CAF50?style=for-the-badge)](https://twelvelabs-video-transcriber.onrender.com/)
+[![MultiLingual Video Transcriber](https://img.shields.io/badge/Transcriber-Launch_the_App-4CAF50?style=for-the-badge)](https://twelvelabs-multilingual-video-transcriber.onrender.com/)
 
 - Video to be Added
 
