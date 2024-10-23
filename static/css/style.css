@@ -317,3 +317,10 @@
     background: linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(248, 113, 113, 0.1));
     color: #ef4444;
 }
+
+.gradient-text {
+    background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}

@@ -9,43 +9,58 @@
 </head>
 <body class="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
     <div class="container mx-auto px-4 py-8">
-
-        <div class="header-section">
-            <h1 class="title">Video Transcript Translator</h1>
-            <p class="subtitle">Transform your videos with intelligent translation</p>
+        <div class="text-center mb-12">
+            <h1 class="text-4xl font-bold mb-4 gradient-text">Video Transcript Translator</h1>
+            <p class="text-gray-600">Transform your video content into multiple languages</p>
         </div>
 
-        <div class="main-form-container">
-            <form id="upload-form" class="upload-form">
-                <div class="language-section">
-                    <label class="section-label">Select Target Language</label>
-                    <div class="language-grid">
-                        <select name="language" class="language-select">
-                            <option value="german">German</option>
-                            <option value="french">French</option>
-                            <option value="spanish">Spanish</option>
-                            <option value="english">English</option>
-                        </select>
-                    </div>
+        <div class="max-w-2xl mx-auto bg-white rounded-2xl shadow-xl p-8 backdrop-blur-lg bg-opacity-90">
+            <form id="upload-form" class="space-y-6">
+                <div class="mb-6">
+                    <label class="block text-gray-700 text-sm font-semibold mb-3">
+                        Select Target Language
+                    </label>
+                    <select name="language" class="language-select">
+                        <option value="german">German</option>
+                        <option value="french">French</option>
+                        <option value="spanish">Spanish</option>
+                        <option value="english">English</option>
+                    </select>
                 </div>
 
                 <div class="upload-container">
-                    <input type="file" name="file" id="file-input" class="file-input" accept=".mp4,.avi,.mov">
+                    <input type="file" name="file" id="file-input" class="hidden" accept=".mp4,.avi,.mov"/>
                     <label for="file-input" class="upload-label">
-                        <div class="upload-icon">
+                        <div class="upload-icon-wrapper">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
                             </svg>
                         </div>
-                        <div class="upload-text">
-                            <span class="primary-text">Choose a video or drag it here</span>
+                        
+                        <div class="upload-text-wrapper">
+                            <span id="upload-prompt" class="primary-text">Choose a video or drag it here</span>
                             <span class="secondary-text">MP4, AVI, or MOV up to 100MB</span>
                         </div>
-                        <div class="filename-display" id="filename-display"></div>
+
+                        <div id="selected-file" class="selected-file hidden">
+                            <div class="file-info">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="file-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V7L15 2z"/>
+                                    <polyline points="14 2 14 8 20 8"/>
+                                    <line x1="10" y1="13" x2="14" y2="13"/>
+                                </svg>
+                                <span id="filename-display" class="filename"></span>
+                            </div>
+                            <button type="button" id="remove-file" class="remove-file">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                                </svg>
+                            </button>
+                        </div>
                     </label>
                 </div>
 
-                <button type="submit" class="submit-button">
+                <button type="submit" id="submit-button" class="submit-button" disabled>
                     <span class="button-text">Upload and Process</span>
                     <div class="button-loader hidden"></div>
                 </button>
@@ -54,19 +69,17 @@
 
         <div id="status" class="status-message hidden"></div>
 
-        <!-- Results Section -->
-        <div id="result" class="result-section hidden">
-            <div class="results-grid">
-                <div class="video-section">
-                    <h2 class="section-title">Video Preview</h2>
-                    <div id="video-container" class="video-container">
+        <div id="result" class="hidden mt-8">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div class="bg-white rounded-2xl shadow-xl p-6">
+                    <h2 class="text-2xl font-bold mb-6 gradient-text">Video Preview</h2>
+                    <div id="video-container" class="aspect-w-16 aspect-h-9 rounded-lg overflow-hidden bg-gray-100">
                     </div>
                 </div>
 
-                <!-- Transcript Section -->
-                <div class="transcript-section">
-                    <h2 class="section-title">Translated Transcript</h2>
-                    <div id="transcript" class="transcript-container">
+                <div class="bg-white rounded-2xl shadow-xl p-6">
+                    <h2 class="text-2xl font-bold mb-6 gradient-text">Translated Transcript</h2>
+                    <div id="transcript" class="h-[600px] overflow-y-auto custom-scrollbar">
                     </div>
                 </div>
             </div>
@@ -80,6 +93,41 @@
         </div>
     </div>
 
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const fileInput = document.getElementById('file-input');
+            const uploadPrompt = document.getElementById('upload-prompt');
+            const selectedFile = document.getElementById('selected-file');
+            const filenameDisplay = document.getElementById('filename-display');
+            const removeFileBtn = document.getElementById('remove-file');
+            const submitButton = document.getElementById('submit-button');
+
+            fileInput.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    uploadPrompt.classList.add('hidden');
+                    selectedFile.classList.remove('hidden');
+                    filenameDisplay.textContent = file.name;
+                    submitButton.disabled = false;
+                } else {
+                    resetFileUpload();
+                }
+            });
+
+            removeFileBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                fileInput.value = '';
+                resetFileUpload();
+            });
+
+            function resetFileUpload() {
+                uploadPrompt.classList.remove('hidden');
+                selectedFile.classList.add('hidden');
+                filenameDisplay.textContent = '';
+                submitButton.disabled = true;
+            }
+        });
+    </script>
     <script src="/static/js/app.js"></script>
 </body>
 </html>
