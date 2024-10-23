@@ -74,6 +74,13 @@ Install Dependencies
  pip install -r requirements.txt
 ```
 
+Prepare the .emv file as per the instrcution. The .env file is provided below
+
+```
+API_KEY = "<Your API Key>"
+API_URL = "https://api.twelvelabs.io/v1.2"
+```
+
 To Run the Server Locally
 
 ```
