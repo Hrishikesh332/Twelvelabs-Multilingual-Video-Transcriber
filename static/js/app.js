@@ -1,20 +1,14 @@
 document.addEventListener('DOMContentLoaded', () => {
     const form = document.getElementById('upload-form');
-    const status = document.getElementById('status');
-    const result = document.getElementById('result');
-    const transcriptDiv = document.getElementById('transcript');
-    const videoContainer = document.getElementById('video-container');
-    const downloadButton = document.getElementById('download-transcript');
-
-    form.addEventListener('submit', handleFormSubmit);
-    transcriptDiv.addEventListener('click', handleTranscriptClick);
-    downloadButton.addEventListener('click', downloadTranscript);
+    if (form) {
+        form.addEventListener('submit', handleFormSubmit);
+    }
 });
 
 async function handleFormSubmit(e) {
     e.preventDefault();
     const formData = new FormData(e.target);
-
+    
     updateStatus('Uploading file and processing...', 'loading');
     hideResult();
 
@@ -25,6 +19,7 @@ async function handleFormSubmit(e) {
         });
 
         const data = await response.json();
+        console.log('Server response:', data);
 
         if (response.ok && data.status === 'ready') {
             updateStatus('Processing complete!', 'success');
@@ -35,172 +30,230 @@ async function handleFormSubmit(e) {
             throw new Error(data.message || 'An error occurred during processing');
         }
     } catch (error) {
+        console.error('Error:', error);
         updateStatus(`Error: ${error.message}`, 'error');
     }
 }
 
-function updateStatus(message, className) {
-    const status = document.getElementById('status');
-    status.textContent = message;
-    status.className = `text-center text-lg font-semibold mb-4 ${className}`;
-}
-
-function hideResult() {
-    document.getElementById('result').classList.add('hidden');
-}
-
-function showResult() {
-    const resultElement = document.getElementById('result');
-    resultElement.classList.remove('hidden');
-    resultElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
-}
-
-
-function displayTranscript(transcript) {
-    const transcriptDiv = document.getElementById('transcript');
-    transcriptDiv.innerHTML = ''; 
-    
-    const entries = parseTranscript(transcript);
-    const formattedTranscriptDiv = document.createElement('div');
-    formattedTranscriptDiv.innerHTML = '<h3 class="text-2xl font-bold mb-4">Formatted Transcript:</h3>';
-    formattedTranscriptDiv.innerHTML += entries.map(entry => 
-        `<div class="transcript-entry">
-            <button class="timestamp text-sm timestamp-box" data-start="${entry.start}" data-end="${entry.end}">
-                ${formatTime(entry.start)} - ${formatTime(entry.end)}
-            </button>
-            <span class="transcript-text text-base text-black">${entry.text}</span>
-        </div>`
-    ).join('');
-    transcriptDiv.appendChild(formattedTranscriptDiv);
-
-    const timestamps = transcriptDiv.querySelectorAll('.timestamp');
-    timestamps.forEach(timestamp => {
-        timestamp.addEventListener('click', handleTimestampClick);
-    });
-    document.getElementById('download-transcript').classList.remove('hidden');
-    
-    document.getElementById('result').classList.remove('hidden');
-}
-
-
-function handleTimestampClick(e) {
-    const startTime = parseFloat(e.target.dataset.start);
-    const endTime = parseFloat(e.target.dataset.end);
-    const video = document.querySelector('video');
-    if (video) {
-        video.currentTime = startTime;
-        video.play();
-        
-        const checkTime = () => {
-            if (video.currentTime >= endTime) {
-                video.pause();
-                video.removeEventListener('timeupdate', checkTime);
-            }
-        };
-        video.addEventListener('timeupdate', checkTime);
-    }
-}
-
-
 function parseTranscript(transcript) {
-    const lines = transcript.split('\n');
+    console.log('Raw transcript:', transcript);
     const entries = [];
-    for (const line of lines) {
-        const match = line.match(/(\d+)s\s*-\s*(\d+)s\s*:\s*(.+)/);
-        if (match) {
-            entries.push({
-                start: parseInt(match[1]),
-                end: parseInt(match[2]),
-                text: match[3].trim()
-            });
+    
+    if (!transcript) {
+        console.error('Empty transcript received');
+        return entries;
+    }
+
+    const lines = transcript
+        .trim()
+        .split('\n')
+        .filter(line => line.trim())
+        .filter(line => !line.startsWith('This translation'));
+
+    lines.forEach((line, index) => {
+        const timePatterns = [
+            /^(\d+)s\s*-\s*(\d+)s:\s*"?(.+?)"?$/,
+            /^(\d+)s\s*~\s*(\d+)s:\s*"?(.+?)"?$/,
+            /^(\d+):(\d+)\s*-?\s*(?:(\d+):(\d+))?\s*:?\s*"?(.+?)"?$/,
+            /^(\d+)s:\s*"?(.+?)"?$/,
+            /^(\d+)\s*[:-]\s*"?(.+?)"?$/
+        ];
+
+        let entry = null;
+        
+        for (const pattern of timePatterns) {
+            const match = line.match(pattern);
+            if (match) {
+                if (match.length === 6) { // MM:SS - MM:SS format
+                    const startMinutes = parseInt(match[1]);
+                    const startSeconds = parseInt(match[2]);
+                    const endMinutes = match[3] ? parseInt(match[3]) : startMinutes;
+                    const endSeconds = match[4] ? parseInt(match[4]) : startSeconds + 15;
+                    
+                    entry = {
+                        start: startMinutes * 60 + startSeconds,
+                        end: endMinutes * 60 + endSeconds,
+                        text: match[5].trim()
+                    };
+                } else if (match.length === 4) {
+                    entry = {
+                        start: parseInt(match[1]),
+                        end: parseInt(match[2]),
+                        text: match[3].trim()
+                    };
+                } else if (match.length === 3) { 
+                    const startTime = parseInt(match[1]);
+                    entry = {
+                        start: startTime,
+                        end: startTime + 15,
+                        text: match[2].trim()
+                    };
+                }
+                break;
+            }
+        }
+
+        if (entry) {
+            entry.text = entry.text
+                .replace(/^["']|["']$/g, '') 
+                .replace(/\s+/g, ' ')        
+                .trim();
+            
+            entries.push(entry);
+        }
+    });
+
+    entries.sort((a, b) => a.start - b.start);
+    for (let i = 0; i < entries.length - 1; i++) {
+        if (entries[i].end > entries[i + 1].start) {
+            entries[i].end = entries[i + 1].start;
         }
     }
+
+    console.log('Parsed entries:', entries);
     return entries;
 }
 
-function handleTranscriptClick(e) {
-    if (e.target.classList.contains('timestamp')) {
-        const startTime = parseFloat(e.target.dataset.start);
-        const endTime = parseFloat(e.target.dataset.end);
-        const video = document.querySelector('video');
-        if (video) {
-            video.currentTime = startTime;
-            video.play();
-            
-            const checkTime = () => {
-                if (video.currentTime >= endTime) {
-                    video.pause();
-                    video.removeEventListener('timeupdate', checkTime);
-                }
-            };
-            video.addEventListener('timeupdate', checkTime);
-        }
+function displayTranscript(transcript) {
+    const transcriptDiv = document.getElementById('transcript');
+    if (!transcriptDiv) return;
+
+    transcriptDiv.innerHTML = '';
+    const entries = parseTranscript(transcript);
+    
+    if (entries.length === 0) {
+        transcriptDiv.innerHTML = '<p class="text-gray-500 text-center">No transcript data available</p>';
+        return;
     }
+
+    const transcriptContent = document.createElement('div');
+    transcriptContent.className = 'space-y-4';
+
+    entries.forEach((entry, index) => {
+        const entryDiv = document.createElement('div');
+        entryDiv.className = 'transcript-entry';
+        entryDiv.dataset.index = index;
+        entryDiv.innerHTML = `
+            <span class="timestamp" data-start="${entry.start}" data-end="${entry.end}">
+                ${formatTime(entry.start)}
+            </span>
+            <span class="transcript-text">${entry.text}</span>
+        `;
+        transcriptContent.appendChild(entryDiv);
+    });
+
+    transcriptDiv.appendChild(transcriptContent);
+
+    transcriptDiv.querySelectorAll('.timestamp').forEach(timestamp => {
+        timestamp.addEventListener('click', handleTimestampClick);
+    });
+}
+
+function handleTimestampClick(e) {
+    const video = document.querySelector('video');
+    if (!video) return;
+
+    const startTime = parseFloat(e.target.dataset.start);
+    const endTime = parseFloat(e.target.dataset.end);
+
+    video.currentTime = startTime;
+    video.play();
+
+    if (window.currentTimeUpdateHandler) {
+        video.removeEventListener('timeupdate', window.currentTimeUpdateHandler);
+    }
+
+
+    window.currentTimeUpdateHandler = () => {
+        if (video.currentTime >= endTime) {
+            video.pause();
+            video.removeEventListener('timeupdate', window.currentTimeUpdateHandler);
+        }
+    };
+    video.addEventListener('timeupdate', window.currentTimeUpdateHandler);
+
+    updateTranscriptHighlight(startTime);
 }
 
 function displayVideo(videoPath) {
     const videoContainer = document.getElementById('video-container');
+    if (!videoContainer) return;
+
     videoContainer.innerHTML = `
-        <video class="w-full h-full rounded-lg shadow-md" controls>
+        <video controls class="w-full h-full rounded-lg">
             <source src="${videoPath}" type="video/mp4">
             Your browser does not support the video tag.
         </video>
     `;
-}
 
-function formatTime(seconds) {
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = Math.floor(seconds % 60);
-    return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
-}
+    const video = videoContainer.querySelector('video');
+    if (video) {
+        video.addEventListener('timeupdate', () => {
+            updateTranscriptHighlight(video.currentTime);
+        });
 
-
-function downloadTranscript() {
-    const transcriptContent = document.getElementById('transcript').innerText;
-    const lines = transcriptContent.split('\n');
-    const { jsPDF } = window.jspdf;
-    const pdf = new jsPDF();
-    
-    pdf.setFontSize(20);
-    pdf.setTextColor(44, 62, 80); 
-    pdf.text('Transcript', 105, 20, null, null, 'center');
-    
-    pdf.setFontSize(12);
-    pdf.setTextColor(52, 73, 94); 
-    let y = 40;
-    lines.forEach(line => {
-        if (y > 280) {
-            pdf.addPage();
-            y = 20;
-        }
-        const splitText = pdf.splitTextToSize(line, 180);
-        pdf.text(splitText, 15, y);
-        y += 7 * splitText.length;
-    });
-    
-    pdf.save('transcript.pdf');
+        video.addEventListener('error', (e) => {
+            console.error('Video error:', e);
+            updateStatus('Error loading video', 'error');
+        });
+    }
 }
 
 function updateTranscriptHighlight(currentTime) {
-    const transcriptEntries = document.querySelectorAll('.transcript-entry');
-    transcriptEntries.forEach(entry => {
+    const entries = document.querySelectorAll('.transcript-entry');
+    
+    entries.forEach(entry => {
         const timestamp = entry.querySelector('.timestamp');
         const start = parseFloat(timestamp.dataset.start);
         const end = parseFloat(timestamp.dataset.end);
 
         if (currentTime >= start && currentTime < end) {
-            entry.classList.add('bg-yellow-100');
-            entry.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            entry.classList.add('active');
+            entry.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         } else {
-            entry.classList.remove('bg-yellow-100');
+            entry.classList.remove('active');
         }
     });
 }
 
-document.addEventListener('DOMNodeInserted', (event) => {
-    if (event.target.tagName === 'VIDEO') {
-        event.target.addEventListener('timeupdate', (e) => {
-            updateTranscriptHighlight(e.target.currentTime);
-        });
+function formatTime(seconds) {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = Math.floor(seconds % 60);
+    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+}
+
+function updateStatus(message, type) {
+    const statusElement = document.getElementById('status');
+    if (!statusElement) return;
+
+    statusElement.textContent = message;
+    statusElement.className = 'text-center text-xl font-semibold mb-8';
+    statusElement.classList.remove('hidden');
+
+    switch (type) {
+        case 'loading':
+            statusElement.classList.add('text-blue-600');
+            break;
+        case 'success':
+            statusElement.classList.add('text-green-600');
+            break;
+        case 'error':
+            statusElement.classList.add('text-red-600');
+            break;
     }
-});
+}
+
+function hideResult() {
+    const resultElement = document.getElementById('result');
+    if (resultElement) {
+        resultElement.classList.add('hidden');
+    }
+}
+
+function showResult() {
+    const resultElement = document.getElementById('result');
+    if (resultElement) {
+        resultElement.classList.remove('hidden');
+        resultElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+}

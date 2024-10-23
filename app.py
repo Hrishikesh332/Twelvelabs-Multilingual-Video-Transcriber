@@ -18,9 +18,6 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024
 
 client = TwelveLabs(api_key=API_KEY)
-headers = {
-    "x-api-key": API_KEY
-}
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -30,7 +27,7 @@ def index():
     return render_template('index.html')
 
 def on_task_update(task: Task):
-    print(f" Status={task.status}")
+    print(f"Status={task.status}")
 
 def process_video(filepath, language):
     try:
@@ -56,23 +53,23 @@ def process_video(filepath, language):
             print(f"Using existing index with ID: {session['index_id']}")
 
         task = client.task.create(index_id=session['index_id'], file=filepath)
-        
         task.wait_for_done(sleep_interval=5, callback=on_task_update)
+        
         if task.status != "ready":
             raise RuntimeError(f"Indexing failed with status {task.status}")
+        
         print(f"The unique identifier of your video is {task.video_id}.")
         
         prompt = f"Provide the Transcript in the Translated {language.capitalize()} Language with the timestamp of the Indexed Video Content."
         res = client.generate.text(video_id=task.video_id, prompt=prompt, temperature=0.25)
-        print("Raw API Response:")
-        print(res.data)
-        
+        print(res)
         return {
             'status': 'ready',
             'message': 'File processed successfully',
             'transcript': res.data,
             'video_path': f'/uploads/{os.path.basename(filepath)}'
         }
+        
     except Exception as e:
         print(f"Error processing video: {str(e)}")
         return {'status': 'error', 'message': str(e)}
@@ -81,6 +78,7 @@ def process_video(filepath, language):
 def upload_file():
     if 'file' not in request.files:
         return jsonify({'status': 'error', 'message': 'No file part'}), 400
+    
     file = request.files['file']
     language = request.form.get('language', 'german')
     
