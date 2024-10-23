@@ -324,3 +324,26 @@
     background-clip: text;
     color: transparent;
 }
+
+.download-button {
+    background-size: 200% 200%;
+    animation: gradient 4s ease infinite;
+    transition: all 0.3s ease;
+}
+
+.download-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.download-button:active {
+    transform: translateY(0);
+}
+
+.download-button svg {
+    transition: transform 0.3s ease;
+}
+
+.download-button:hover svg {
+    transform: translateY(2px);
+}

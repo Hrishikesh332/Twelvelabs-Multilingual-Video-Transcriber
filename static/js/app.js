@@ -257,3 +257,117 @@ function showResult() {
         resultElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 }
+
+function formatTranscriptForPDF(entries) {
+    let formattedText = [];
+    entries.forEach(entry => {
+        const timestamp = entry.querySelector('.timestamp').innerText;
+        const text = entry.querySelector('.transcript-text').innerText;
+        formattedText.push(`${timestamp}: ${text}`);
+    });
+    return formattedText;
+}
+
+function downloadTranscript() {
+    const transcriptEntries = document.querySelectorAll('.transcript-entry');
+    if (!transcriptEntries.length) {
+        console.error('No transcript content found');
+        return;
+    }
+
+    try {
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF();
+        
+        
+        pdf.setFontSize(24);
+        pdf.setTextColor(59, 130, 246);
+        pdf.text('Video Transcript', 105, 20, null, null, 'center');
+
+        pdf.setFontSize(12);
+        pdf.setTextColor(52, 73, 94); 
+        
+        const formattedText = formatTranscriptForPDF(transcriptEntries);
+        let y = 40;
+
+        formattedText.forEach(line => {
+            if (y > 280) { 
+                pdf.addPage();
+                y = 20;
+            }
+        
+            const splitText = pdf.splitTextToSize(line, 180);
+            pdf.text(splitText, 15, y);
+            
+            y += 7 * splitText.length + 3;
+        });
+        
+        const date = new Date().toISOString().split('T')[0];
+        pdf.save(`transcript_${date}.pdf`);
+
+    } catch (error) {
+        console.error('Error generating PDF:', error);
+        alert('Error generating PDF. Please try again.');
+    }
+}
+
+function addDownloadButton() {
+    const transcriptSection = document.getElementById('transcript').parentElement;
+    
+    const existingButton = transcriptSection.querySelector('.download-button');
+    if (existingButton) {
+        existingButton.remove();
+    }
+    
+
+    const downloadButton = document.createElement('button');
+    downloadButton.className = 'download-button w-full mt-4 py-3 px-4 rounded-lg text-white font-medium transition-all duration-300 bg-gradient-to-r from-blue-500 to-purple-500 hover:shadow-lg hover:-translate-y-0.5';
+    downloadButton.innerHTML = `
+        <span class="flex items-center justify-center">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+            </svg>
+            Download Transcript
+        </span>
+    `;
+    
+    downloadButton.addEventListener('click', downloadTranscript);
+    transcriptSection.appendChild(downloadButton);
+}
+
+function displayTranscript(transcript) {
+    const transcriptDiv = document.getElementById('transcript');
+    if (!transcriptDiv) return;
+
+    transcriptDiv.innerHTML = '';
+    const entries = parseTranscript(transcript);
+    
+    if (entries.length === 0) {
+        transcriptDiv.innerHTML = '<p class="text-gray-500 text-center">No transcript data available</p>';
+        return;
+    }
+
+    const transcriptContent = document.createElement('div');
+    transcriptContent.className = 'space-y-4';
+
+    entries.forEach((entry, index) => {
+        const entryDiv = document.createElement('div');
+        entryDiv.className = 'transcript-entry';
+        entryDiv.dataset.index = index;
+        entryDiv.innerHTML = `
+            <span class="timestamp" data-start="${entry.start}" data-end="${entry.end}">
+                ${formatTime(entry.start)}
+            </span>
+            <span class="transcript-text">${entry.text}</span>
+        `;
+        transcriptContent.appendChild(entryDiv);
+    });
+
+    transcriptDiv.appendChild(transcriptContent);
+
+    transcriptDiv.querySelectorAll('.timestamp').forEach(timestamp => {
+        timestamp.addEventListener('click', handleTimestampClick);
+    });
+
+    addDownloadButton();
+}
