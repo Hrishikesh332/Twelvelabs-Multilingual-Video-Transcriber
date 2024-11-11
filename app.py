@@ -29,7 +29,7 @@ def index():
 def on_task_update(task: Task):
     print(f"Status={task.status}")
 
-def process_video(filepath, language):
+def process_video(filepath, language, difficulty):
     try:
         if 'index_id' not in session:
             index_name = f"Translate{uuid.uuid4().hex[:8]}"
@@ -60,7 +60,16 @@ def process_video(filepath, language):
         
         print(f"The unique identifier of your video is {task.video_id}.")
         
-        prompt = f"Provide the Transcript in the Translated {language.capitalize()} Language with the timestamp of the Indexed Video Content."
+        # Updated prompt with difficulty level
+        difficulty_prompts = {
+            "beginner": "Provide a simplified and easy-to-understand",
+            "intermediate": "Provide a moderately detailed",
+            "advanced": "Provide a comprehensive and detailed"
+        }
+        
+        base_prompt = difficulty_prompts.get(difficulty, difficulty_prompts["intermediate"])
+        prompt = f"Provide the Only Transcript in the Translated {language.capitalize()} Language, {base_prompt} level with the timestamp duration (in the format of ss : ss) of the Indexed Video Content."
+        
         res = client.generate.text(video_id=task.video_id, prompt=prompt, temperature=0.25)
         print(res)
         return {
@@ -81,6 +90,7 @@ def upload_file():
     
     file = request.files['file']
     language = request.form.get('language', 'german')
+    difficulty = request.form.get('difficulty', 'intermediate')
     
     if file.filename == '':
         return jsonify({'status': 'error', 'message': 'No selected file'}), 400
@@ -90,7 +100,7 @@ def upload_file():
         filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         file.save(filepath)
         
-        result = process_video(filepath, language)
+        result = process_video(filepath, language, difficulty)
         return jsonify(result)
     
     return jsonify({'status': 'error', 'message': 'File type not allowed'}), 400

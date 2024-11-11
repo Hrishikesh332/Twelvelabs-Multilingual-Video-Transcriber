@@ -5,9 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Video Transcript Translator</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="/static/css/style.css">
+    <link href="/static/style.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
-<body class="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
+<body class="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50">
     <div class="container mx-auto px-4 py-8">
         <div class="text-center mb-12">
             <h1 class="text-4xl font-bold mb-4 gradient-text">Video Transcript Translator</h1>
@@ -17,10 +18,8 @@
         <div class="max-w-2xl mx-auto bg-white rounded-2xl shadow-xl p-8 backdrop-blur-lg bg-opacity-90">
             <form id="upload-form" class="space-y-6">
                 <div class="mb-6">
-                    <label class="block text-gray-700 text-sm font-semibold mb-3">
-                        Select Target Language
-                    </label>
-                    <select name="language" class="language-select">
+                    <label for="language" class="block text-sm font-medium text-gray-700 mb-2">Select Target Language</label>
+                    <select id="language" name="language" class="w-full p-3 border rounded-lg">
                         <option value="german">German</option>
                         <option value="french">French</option>
                         <option value="spanish">Spanish</option>
@@ -28,41 +27,56 @@
                     </select>
                 </div>
 
-                <div class="upload-container">
-                    <input type="file" name="file" id="file-input" class="hidden" accept=".mp4,.avi,.mov"/>
-                    <label for="file-input" class="upload-label">
-                        <div class="upload-icon-wrapper">
+                <div class="mb-6">
+                    <label for="difficulty" class="block text-sm font-medium text-gray-700 mb-2">Select Difficulty Level</label>
+                    <select id="difficulty" name="difficulty" class="w-full p-3 border rounded-lg">
+                        <option value="beginner">Beginner</option>
+                        <option value="intermediate">Intermediate</option>
+                        <option value="advanced">Advanced</option>
+                    </select>
+                </div>
+
+                <div class="upload-container" id="drop-zone">
+                    <input type="file" id="file-input" name="file" class="hidden" accept=".mp4,.avi,.mov">
+                    <label for="file-input" class="cursor-pointer">
+                        <div class="upload-icon-wrapper mb-4">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                             </svg>
                         </div>
-                        
                         <div class="upload-text-wrapper">
                             <span id="upload-prompt" class="primary-text">Choose a video or drag it here</span>
                             <span class="secondary-text">MP4, AVI, or MOV up to 100MB</span>
                         </div>
+                    </label>
 
-                        <div id="selected-file" class="selected-file hidden">
-                            <div class="file-info">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="file-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V7L15 2z"/>
-                                    <polyline points="14 2 14 8 20 8"/>
-                                    <line x1="10" y1="13" x2="14" y2="13"/>
+                    <div id="selected-file" class="selected-file hidden">
+                        <div class="file-info flex items-center justify-between p-2 bg-blue-50 rounded-lg">
+                            <div class="flex items-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="file-icon h-5 w-5 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V7L15 2z" />
+                                    <polyline points="14 2 14 8 20 8"></polyline>
+                                    <line x1="10" y1="13" x2="14" y2="13"></line>
                                 </svg>
                                 <span id="filename-display" class="filename"></span>
                             </div>
-                            <button type="button" id="remove-file" class="remove-file">
+                            <button type="button" id="remove-file" class="text-gray-500 hover:text-gray-700">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                    <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                                    <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
                                 </svg>
                             </button>
                         </div>
-                    </label>
+                    </div>
                 </div>
 
-                <button type="submit" id="submit-button" class="submit-button" disabled>
+                <button type="submit" class="w-full py-3 px-4 rounded-lg text-white font-medium transition-all duration-300 bg-gradient-to-r from-blue-500 to-purple-500 hover:shadow-lg hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed">
                     <span class="button-text">Upload and Process</span>
-                    <div class="button-loader hidden"></div>
+                    <div class="button-loader hidden">
+                        <svg class="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                    </div>
                 </button>
             </form>
         </div>
@@ -89,46 +103,10 @@
     <div id="loading-overlay" class="loading-overlay hidden">
         <div class="loading-content">
             <div class="loading-spinner"></div>
-            <p class="loading-text">Processing your video...</p>
+            <div class="text-gray-700 font-medium">Processing your video...</div>
         </div>
     </div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const fileInput = document.getElementById('file-input');
-            const uploadPrompt = document.getElementById('upload-prompt');
-            const selectedFile = document.getElementById('selected-file');
-            const filenameDisplay = document.getElementById('filename-display');
-            const removeFileBtn = document.getElementById('remove-file');
-            const submitButton = document.getElementById('submit-button');
-
-            fileInput.addEventListener('change', function(e) {
-                const file = e.target.files[0];
-                if (file) {
-                    uploadPrompt.classList.add('hidden');
-                    selectedFile.classList.remove('hidden');
-                    filenameDisplay.textContent = file.name;
-                    submitButton.disabled = false;
-                } else {
-                    resetFileUpload();
-                }
-            });
-
-            removeFileBtn.addEventListener('click', function(e) {
-                e.preventDefault();
-                fileInput.value = '';
-                resetFileUpload();
-            });
-
-            function resetFileUpload() {
-                uploadPrompt.classList.remove('hidden');
-                selectedFile.classList.add('hidden');
-                filenameDisplay.textContent = '';
-                submitButton.disabled = true;
-            }
-        });
-    </script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="/static/js/app.js"></script>
+    <script src="/static/app.js"></script>
 </body>
 </html>
