@@ -40,7 +40,7 @@ Also, providing the time stamp interaction with the video, for the proper tracki
 
 Try out the application now:
 
-[![MultiLingual Video Transcriber](https://img.shields.io/badge/Transcriber-Launch_the_App-4CAF50?style=for-the-badge)](https://twelvelabs-video-transcriber.onrender.com/)
+[![MultiLingual Video Transcriber](https://img.shields.io/badge/Transcriber-Launch_the_App-4CAF50?style=for-the-badge)](https://twelvelabs-multilingual-video-transcriber.onrender.com/)
 
 - Video to be Added
 
@@ -72,6 +72,13 @@ Install Dependencies
  cd Twelvelabs-Multilingual-Video-Transcriber
  
  pip install -r requirements.txt
+```
+
+Prepare the .emv file as per the instrcution. The .env file is provided below
+
+```
+API_KEY = "<Your API Key>"
+API_URL = "https://api.twelvelabs.io/v1.2"
 ```
 
 To Run the Server Locally
