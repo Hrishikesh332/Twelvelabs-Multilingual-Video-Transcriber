@@ -171,7 +171,8 @@ document.addEventListener('DOMContentLoaded', () => {
             // HH:MM - HH:MM: text
             /(\d{2}):(\d{2})\s*-\s*(\d{2}):(\d{2})\s*:\s*([^"\n]+)/g,
             // Simple format with quotes
-            /(\d{2}):(\d{2})\s*-\s*(\d{2}):(\d{2})\s*["']([^"']+)["']/g
+            /(\d{2}):(\d{2})\s*-\s*(\d{2}):(\d{2})\s*["']([^"']+)["']/g,
+            /\*\*(\d{2}):(\d{2})\s*-\s*(\d{2}):(\d{2})\*\*:\s*([^*\n]+)/g
         ];
     
         // Try each pattern
