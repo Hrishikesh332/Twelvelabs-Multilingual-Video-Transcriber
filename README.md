@@ -42,7 +42,10 @@ Try out the application now:
 
 [![MultiLingual Video Transcriber](https://img.shields.io/badge/Transcriber-Launch_the_App-4CAF50?style=for-the-badge)](https://twelvelabs-multilingual-video-transcriber.onrender.com/)
 
-- Video to be Added
+Demo and Video Explanation -
+
+
+  [![Watch the video](https://img.youtube.com/vi/4vL1YPG6Ndk/hqdefault.jpg)](https://youtu.be/4vL1YPG6Ndk?si=3iw8A0Wiz3EnMxCs)
 
 ## Features
 
@@ -56,6 +59,10 @@ Try out the application now:
 **Frontend** - HTML, CSS, JavaScript  
 **Backend** - Flask, Twelve Labs AI APIs  
 **AI Technologies** - Twelve Labs (Marengo 2.6 and Pegasus 1.1)
+
+The working architecture of the application - 
+
+![working architecture of the application](https://github.com/Hrishikesh332/Twelvelabs-Multilingual-Video-Transcriber/blob/main/src/architecture-trascriber-twelvelabs.png)
 
 ## Instructions on Running Project Locally:
 
@@ -86,6 +93,8 @@ To Run the Server Locally
 ```
 python app.py
 ```
+
+Open the index.html in the browser to access the application 
 
 ## Usecases
 
